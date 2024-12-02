@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package product;
+option go_package = "product/proto/product"; 
+
+message Product {
+    uint64 id = 1;
+    string name = 2;
+    string description = 3;
+    double price = 4;
+    uint64 user_id = 5;
+    string created_at = 6;
+    string updated_at = 7;
+}
+
+message CreateProductRequest {
+    string name = 1;
+    string description = 2;
+    double price = 3;
+}
+
+message GetProductRequest {
+    uint64 id = 1;
+}
+
+message ListProductsRequest {
+    int32 page = 1;
+    int32 per_page = 2;
+}
+
+message ListProductsResponse {
+    repeated Product products = 1;
+    int32 total = 2;
+}
+
+service ProductService {
+    rpc CreateProduct(CreateProductRequest) returns (Product);
+    rpc GetProduct(GetProductRequest) returns (Product);
+    rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+}

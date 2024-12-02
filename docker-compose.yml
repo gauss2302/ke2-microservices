@@ -1,0 +1,74 @@
+services:
+  auth-service:
+    build: ./auth
+    ports:
+      - "8080:8080"
+      - "50052:50052"
+    depends_on:
+      - redis
+      - user-service
+    environment:
+      - REDIS_ADDR=redis:6379
+      - USER_SERVICE_ADDR=user-service:50051
+      - JWT_PRIVATE_KEY=your_secret_key_123
+    networks:
+      - app-network
+
+  user-service:
+    build: ./user
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://admin:admin123@postgres:5432/auth_db?sslmode=disable
+      - GRPC_PORT=50051
+    networks:
+      - app-network
+
+  product-service:
+    build: ./product
+    ports:
+      - "8081:8081"
+    depends_on:
+      - auth-service
+      - postgres
+    env_file:
+      - ./product/.env
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin123
+      - POSTGRES_DB=auth_db
+      - AUTH_SERVICE_ADDR=auth-service:50052
+      - JWT_PRIVATE_KEY=your_secret_key_123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6380:6379"
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
