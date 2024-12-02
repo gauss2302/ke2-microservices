@@ -1,8 +1,7 @@
-// auth-service/proto/user.proto
 syntax = "proto3";
 
 package user;
-option go_package = "./proto";
+option go_package = "github.com/gauss2302/testcommm/auth/proto";
 
 message CreateUserRequest {
     string email = 1;
@@ -14,6 +13,10 @@ message VerifyUserRequest {
     string password = 2;
 }
 
+message GetUserByIDRequest {
+    uint64 id = 1;
+}
+
 message User {
     uint64 id = 1;
     string email = 2;
@@ -22,16 +25,5 @@ message User {
 service UserService {
     rpc CreateUser(CreateUserRequest) returns (User);
     rpc VerifyUser(VerifyUserRequest) returns (User);
-}
-
-message VerifyTokenRequest {
-    string token = 1;
-}
-
-message VerifyTokenResponse {
-    uint64 user_id = 1;
-}
-
-service AuthService {
-    rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+    rpc GetUserByID(GetUserByIDRequest) returns (User);
 }

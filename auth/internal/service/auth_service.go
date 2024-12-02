@@ -7,20 +7,21 @@ import (
 	"time"
 
 	"github.com/gauss2302/testcommm/auth/internal/pkg/jwt"
-	pb "github.com/gauss2302/testcommm/auth/proto"
+	pb_auth "github.com/gauss2302/testcommm/auth/proto/auth"
+	pb_user "github.com/gauss2302/testcommm/auth/proto/user"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
 
 type AuthService struct {
-	pb.UnimplementedAuthServiceServer // добавляем это
-	redis                             *redis.Client
-	userClient                        pb.UserServiceClient
-	jwtMaker                          *jwt.JWTMaker
+	pb_auth.UnimplementedAuthServiceServer
+	redis      *redis.Client
+	userClient pb_user.UserServiceClient
+	jwtMaker   *jwt.JWTMaker
 }
 
-func NewAuthService(redis *redis.Client, userClient pb.UserServiceClient, jwtMaker *jwt.JWTMaker) *AuthService {
+func NewAuthService(redis *redis.Client, userClient pb_user.UserServiceClient, jwtMaker *jwt.JWTMaker) *AuthService {
 	return &AuthService{
 		redis:      redis,
 		userClient: userClient,
@@ -29,7 +30,7 @@ func NewAuthService(redis *redis.Client, userClient pb.UserServiceClient, jwtMak
 }
 
 func (s *AuthService) Register(ctx context.Context, email, password string) (*jwt.TokenPair, error) {
-	user, err := s.userClient.CreateUser(ctx, &pb.CreateUserRequest{
+	user, err := s.userClient.CreateUser(ctx, &pb_user.CreateUserRequest{
 		Email:    email,
 		Password: password,
 	})
@@ -55,7 +56,7 @@ func (s *AuthService) Register(ctx context.Context, email, password string) (*jw
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (*jwt.TokenPair, error) {
-	user, err := s.userClient.VerifyUser(ctx, &pb.VerifyUserRequest{
+	user, err := s.userClient.VerifyUser(ctx, &pb_user.VerifyUserRequest{
 		Email:    email,
 		Password: password,
 	})
@@ -80,7 +81,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*jwt.T
 	return tokens, nil
 }
 
-func (s *AuthService) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.VerifyTokenResponse, error) {
+func (s *AuthService) VerifyToken(ctx context.Context, req *pb_auth.VerifyTokenRequest) (*pb_auth.VerifyTokenResponse, error) {
 	log.Printf("Received verification request for token: %s", req.Token)
 
 	userID, err := s.jwtMaker.VerifyToken(req.Token)
@@ -90,7 +91,25 @@ func (s *AuthService) VerifyToken(ctx context.Context, req *pb.VerifyTokenReques
 	}
 
 	log.Printf("Successfully verified token for user ID: %d", userID)
-	return &pb.VerifyTokenResponse{
+	return &pb_auth.VerifyTokenResponse{
 		UserId: userID,
 	}, nil
+}
+
+func (s *AuthService) GetSession(ctx context.Context, token string) (*pb_user.User, error) {
+	// Верифицируем токен
+	userID, err := s.jwtMaker.VerifyToken(token)
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid token")
+	}
+
+	// Получаем информацию о пользователе через user service
+	user, err := s.userClient.GetUserByID(ctx, &pb_user.GetUserByIDRequest{
+		Id: userID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get user")
+	}
+
+	return user, nil
 }

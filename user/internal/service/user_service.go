@@ -55,3 +55,15 @@ func (s *UserService) VerifyUser(ctx context.Context, req *pb.VerifyUserRequest)
 		Email: user.Email,
 	}, nil
 }
+
+func (s *UserService) GetUserByID(ctx context.Context, req *pb.GetUserByIDRequest) (*pb.User, error) {
+	user, err := s.userRepo.GetByID(req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.User{
+		Id:    uint64(user.ID),
+		Email: user.Email,
+	}, nil
+}

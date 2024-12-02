@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package auth;
+option go_package = "github.com/gauss2302/testcommm/auth/proto";
+
+message VerifyTokenRequest {
+    string token = 1;
+}
+
+message VerifyTokenResponse {
+    uint64 user_id = 1;
+}
+
+service AuthService {
+    rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}

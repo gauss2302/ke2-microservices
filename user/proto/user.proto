@@ -18,7 +18,12 @@ message User {
     string email = 2;
 }
 
+message GetUserByIDRequest {
+    uint64 id = 1;
+}
+
 service UserService {
     rpc CreateUser(CreateUserRequest) returns (User);
     rpc VerifyUser(VerifyUserRequest) returns (User);
+    rpc GetUserByID(GetUserByIDRequest) returns (User);
 }

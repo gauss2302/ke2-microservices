@@ -24,3 +24,11 @@ func (r *UserRepository) GetByEmail(email string) (*entity.User, error) {
 	}
 	return &user, nil
 }
+
+func (r *UserRepository) GetByID(id uint64) (*entity.User, error) {
+	var user entity.User
+	if err := r.db.First(&user, id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

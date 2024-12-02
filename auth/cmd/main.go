@@ -9,7 +9,9 @@ import (
 	"github.com/gauss2302/testcommm/auth/internal/handler"
 	"github.com/gauss2302/testcommm/auth/internal/pkg/jwt"
 	"github.com/gauss2302/testcommm/auth/internal/service"
-	pb "github.com/gauss2302/testcommm/auth/proto"
+	pb_auth "github.com/gauss2302/testcommm/auth/proto/auth"
+	pb_user "github.com/gauss2302/testcommm/auth/proto/user"
+
 	"github.com/go-chi/chi"
 	"github.com/go-redis/redis/v8"
 	"google.golang.org/grpc"
@@ -33,7 +35,7 @@ func main() {
 	defer userConn.Close()
 
 	// Create gRPC client
-	userClient := pb.NewUserServiceClient(userConn)
+	userClient := pb_user.NewUserServiceClient(userConn)
 
 	// Initialize services
 	jwtMaker := jwt.NewJWTMaker(os.Getenv("JWT_PRIVATE_KEY"))
@@ -46,7 +48,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
-	pb.RegisterAuthServiceServer(grpcServer, authService)
+	pb_auth.RegisterAuthServiceServer(grpcServer, authService)
 
 	// Start gRPC server in a goroutine
 	go func() {
@@ -60,6 +62,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Post("/register", authHandler.Register)
 	r.Post("/login", authHandler.Login)
+	r.Get("/session", authHandler.GetSession)
 
 	log.Printf("starting HTTP server on :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

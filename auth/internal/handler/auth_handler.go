@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gauss2302/testcommm/auth/internal/service"
 )
@@ -75,5 +76,37 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"access_token": tokens.AccessToken,
+	})
+}
+
+func (h *AuthHandler) GetSession(w http.ResponseWriter, r *http.Request) {
+	// Получаем токен из Authorization header
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "missing authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		http.Error(w, "invalid authorization format", http.StatusUnauthorized)
+		return
+	}
+
+	token := parts[1]
+
+	// Получаем информацию о пользователе
+	user, err := h.authService.GetSession(r.Context(), token)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"user": map[string]interface{}{
+			"id":    user.Id,
+			"email": user.Email,
+		},
 	})
 }
