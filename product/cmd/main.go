@@ -53,7 +53,7 @@ func main() {
 	// Connect to auth service with retry
 	var authConn *grpc.ClientConn
 	for i := 0; i < maxRetries; i++ {
-		authConn, err = grpc.NewClient(
+		authConn, err = grpc.Dial(
 			os.Getenv("AUTH_SERVICE_ADDR"),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
