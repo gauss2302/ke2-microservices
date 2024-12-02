@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package auth;
-option go_package = "product/proto/auth";
+option go_package = "github.com/gauss2302/testcommm/auth/proto";
 
 message VerifyTokenRequest {
     string token = 1;
