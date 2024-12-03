@@ -2,6 +2,8 @@
 package main
 
 import (
+	"github.com/gauss2302/testcommm/product/internal/domain/entity"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"os"
@@ -15,7 +17,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/gauss2302/testcommm/product/internal/domain/entity"
 	"github.com/gauss2302/testcommm/product/internal/handler"
 	authMiddleware "github.com/gauss2302/testcommm/product/internal/middleware"
 	"github.com/gauss2302/testcommm/product/internal/repository"
@@ -82,8 +83,13 @@ func main() {
 
 	// Setup router
 	r := chi.NewRouter()
+
+	//For metrics
+	r.Handle("/metrics", promhttp.Handler())
+
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(authMiddleware.MetricsMiddleware)
 
 	// Protected routes
 	r.Group(func(r chi.Router) {

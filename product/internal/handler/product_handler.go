@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/gauss2302/testcommm/product/internal/internal/metrics"
 	"net/http"
 	"strconv"
 
@@ -42,6 +43,8 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(product)
+	// Add metrics to track
+	metrics.ProductsCreatedTotal.Inc()
 }
 
 func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -123,6 +126,8 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Add metrics to track
+	metrics.ProductsUpdatedTotal.Inc()
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(product)
@@ -149,6 +154,8 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// Add metrics to track
+	metrics.ProductsDeletedTotal.Inc()
 
 	w.WriteHeader(http.StatusNoContent)
 }

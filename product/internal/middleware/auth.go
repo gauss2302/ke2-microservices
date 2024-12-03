@@ -19,7 +19,6 @@ func NewAuthMiddleware(authClient pb.AuthServiceClient) *AuthMiddleware {
 	}
 }
 
-// product/internal/middleware/auth.go
 func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
