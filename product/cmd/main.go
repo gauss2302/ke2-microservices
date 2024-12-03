@@ -92,8 +92,10 @@ func main() {
 		r.Post("/products", productHandler.Create)
 		r.Get("/products/{id}", productHandler.Get)
 		r.Get("/products", productHandler.List)
+		r.Put("/products/{id}", productHandler.Update)
+		r.Delete("/products/{id}", productHandler.Delete)
+		r.Get("/user/products", productHandler.ListUserProducts)
 	})
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081"

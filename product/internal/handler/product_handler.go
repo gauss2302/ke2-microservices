@@ -87,3 +87,98 @@ func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 		"per_page": perPage,
 	})
 }
+
+type UpdateProductRequest struct {
+	Name        string  `json:"name" validate:"required"`
+	Description string  `json:"description"`
+	Price       float64 `json:"price" validate:"required,gt=0"`
+}
+
+func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
+	// Get product ID from URL
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid product id", http.StatusBadRequest)
+		return
+	}
+
+	// Get user ID from context (set by auth middleware)
+	userID := r.Context().Value("user_id").(uint64)
+
+	// Parse request body
+	var req UpdateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Update product
+	product, err := h.productService.UpdateProduct(r.Context(), id, userID, req.Name, req.Description, req.Price)
+	if err != nil {
+		if err.Error() == "product does not belong to user" {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(product)
+}
+
+func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	// Get product ID from URL
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "invalid product id", http.StatusBadRequest)
+		return
+	}
+
+	// Get user ID from context
+	userID := r.Context().Value("user_id").(uint64)
+
+	// Delete product
+	if err := h.productService.DeleteProduct(r.Context(), id, userID); err != nil {
+		if err.Error() == "product does not belong to user" {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ProductHandler) ListUserProducts(w http.ResponseWriter, r *http.Request) {
+	// Get pagination parameters
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	perPage, _ := strconv.Atoi(r.URL.Query().Get("per_page"))
+	if perPage < 1 {
+		perPage = 10
+	}
+
+	// Get user ID from context
+	userID := r.Context().Value("user_id").(uint64)
+
+	// Get user's products
+	products, total, err := h.productService.ListUserProducts(r.Context(), userID, int32(page), int32(perPage))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"products": products,
+		"total":    total,
+		"page":     page,
+		"per_page": perPage,
+	})
+}
