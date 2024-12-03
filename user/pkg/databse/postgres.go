@@ -2,12 +2,13 @@ package database
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/gauss2302/testcommm/user/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"time"
 )
 
 func NewPostgresDB(cfg config.DataBaseConfig) (*gorm.DB, error) {
@@ -15,7 +16,7 @@ func NewPostgresDB(cfg config.DataBaseConfig) (*gorm.DB, error) {
 	var err error
 
 	for i := 0; i < cfg.MaxRetries; i++ {
-		db, err := gorm.Open(postgres.Open(cfg.URL), &gorm.Config{
+		db, err = gorm.Open(postgres.Open(cfg.URL), &gorm.Config{ // убрали :=
 			Logger: logger.Default.LogMode(logger.Error),
 		})
 		if err == nil {
@@ -26,8 +27,8 @@ func NewPostgresDB(cfg config.DataBaseConfig) (*gorm.DB, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database after %d attempts: %v\", cfg.MaxRetries, err")
+		return nil, fmt.Errorf("failed to connect to database after %d attempts: %v", cfg.MaxRetries, err)
 	}
-	log.Printf("Sussessfully connected to database: %s", cfg.URL)
+	log.Printf("Successfully connected to database: %s", cfg.URL)
 	return db, nil
 }
