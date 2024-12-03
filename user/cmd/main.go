@@ -2,43 +2,24 @@
 package main
 
 import (
-	"log"
-	"net"
-	"os"
-	"time"
-
-	"google.golang.org/grpc"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-
+	"github.com/gauss2302/testcommm/user/config"
 	"github.com/gauss2302/testcommm/user/internal/domain/entity"
 	"github.com/gauss2302/testcommm/user/internal/repository"
 	"github.com/gauss2302/testcommm/user/internal/service"
-	pb "github.com/gauss2302/testcommm/user/proto"
+	database "github.com/gauss2302/testcommm/user/pkg/databse"
+	"github.com/gauss2302/testcommm/user/pkg/server"
+	"log"
 )
 
 func main() {
-	// Database connection with retry
-	var db *gorm.DB
-	var err error
+	// Load Config
+	cfg := config.Load()
 
-	maxRetries := 5
-	for i := 0; i < maxRetries; i++ {
-		db, err = gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Error),
-		})
-		if err == nil {
-			break
-		}
-		log.Printf("Failed to connect to database, attempt %d/%d: %v", i+1, maxRetries, err)
-		time.Sleep(5 * time.Second) // Wait 5 seconds before retrying
-	}
+	// Set up the database
+	db, err := database.NewPostgresDB(cfg.Database)
 	if err != nil {
-		log.Fatalf("Failed to connect to database after %d attempts: %v", maxRetries, err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
-
-	log.Printf("Successfully connected to database")
 
 	// Auto migrate
 	if err := db.AutoMigrate(&entity.User{}); err != nil {
@@ -49,17 +30,10 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
 
-	// gRPC server setup
-	lis, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
-
-	grpcServer := grpc.NewServer()
-	pb.RegisterUserServiceServer(grpcServer, userService)
-
-	log.Printf("Starting gRPC server on :50051")
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
+	// Initialize and start gRPC server
+	srv := server.NewServer(userService)
+	log.Printf("Starting gRPC server on :%s", cfg.GRPC.Port)
+	if err := srv.Start(cfg.GRPC); err != nil {
+		log.Fatal(err)
 	}
 }
