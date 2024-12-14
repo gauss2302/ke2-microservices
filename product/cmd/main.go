@@ -84,12 +84,13 @@ func main() {
 	// Setup router
 	r := chi.NewRouter()
 
-	//For metrics
-	r.Handle("/metrics", promhttp.Handler())
-
+	// First, define all middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(authMiddleware.MetricsMiddleware)
+
+	// Then define routes
+	r.Handle("/metrics", promhttp.Handler())
 
 	// Protected routes
 	r.Group(func(r chi.Router) {

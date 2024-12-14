@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/go-chi/cors"
 	"log"
 	"net"
 	"net/http"
@@ -60,6 +61,15 @@ func main() {
 
 	// HTTP server setup
 	r := chi.NewRouter()
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5555", "http://localhost:3000"}, // добавьте все нужные origin'ы
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"}, // разрешаем все заголовки
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 	r.Post("/register", authHandler.Register)
 	r.Post("/login", authHandler.Login)
 	r.Get("/session", authHandler.GetSession)
